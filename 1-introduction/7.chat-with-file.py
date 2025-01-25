@@ -27,7 +27,7 @@ client = AzureOpenAI(
     api_key=api_key,
     api_version= api_version)
 
-f1 = '../data/Modern hospitality resume.pdf'    #if you want to use your own file, change the path here
+f1 = '../data/cv/Modern hospitality resume.pdf'    #if you want to use your own file, change the path here
 
 mdF1 = extract_text_from_file(file=f1)
 

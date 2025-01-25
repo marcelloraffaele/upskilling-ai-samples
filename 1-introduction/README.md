@@ -76,3 +76,7 @@ if a buy a product can i change it ?
 
 ## 8. Create a Jupiter notebook to interact with OpenAI
 1. From the AI Foundry, click on 'view code' and choose "Python" or open the 5.faq-notebook.ipynb file
+
+
+### resources
+- https://learn.microsoft.com/en-us/azure/ai-services/openai/reference

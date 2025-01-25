@@ -1,0 +1,105 @@
+@aiSearchIndex = "aifoundry-cv-index"
+@filename = "Modern nursing resume.docx"
+
+### Run a query
+POST {{aiSearchBaseUrl}}/indexes/{{aiSearchIndex}}/docs/search?api-version=2023-11-01  HTTP/1.1
+    Content-Type: application/json
+    api-key: {{aiSearchApiKey}}
+
+    {
+        "search": "*",
+        "select": "*",
+        "count": true,
+        "top": 10,
+        "filter": "FilePath eq 'Modern hospitality resume.pdf'"
+    }
+
+### openai
+POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version=2024-02-15-preview  HTTP/1.1
+ Content-Type: application/json
+ api-key: {{openaiApiKey}}  
+
+{
+    "data_sources": [
+        {
+            "type": "azure_search",
+            "parameters": {
+                "endpoint": "{{aiSearchBaseUrl}}",
+                "key": "{{aiSearchApiKey}}",
+                "index_name": "{{aiSearchIndex}}"
+            }
+        }
+    ],
+    "messages": [
+        {
+      "role": "system",
+      "content": "You are an AI assistant that helps users find information within their uploaded documents. Anwer only with the content of the uploaded document. Answer only with requested info. If I ask for a Mechanic, don't talk me about farmacist."
+        },
+        {
+            "role": "user",
+            "content": "I am looking for a person to work in a hotel reception. Can you help me?"
+        }
+    ]
+}
+
+
+### test 1
+POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version=2024-02-15-preview  HTTP/1.1
+ Content-Type: application/json
+ api-key: {{openaiApiKey}}  
+
+{
+    "data_sources": [
+        {
+            "type": "azure_search",
+            "parameters": {
+                "endpoint": "{{aiSearchBaseUrl}}",
+                "key": "{{aiSearchApiKey}}",
+                "index_name": "{{aiSearchIndex}}"
+                
+
+            }
+        }
+    ],
+    "messages": [
+        {
+      "role": "system",
+      "content": "You are an AI assistant that helps users to find information inside their documents."
+        },
+        {
+            "role": "user",
+            "content": "look for the file named 'Modern nursing resume.docx' and summarize it"
+        }
+    ]
+}
+
+
+### test 2
+POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version=2024-02-15-preview  HTTP/1.1
+ Content-Type: application/json
+ api-key: {{openaiApiKey}}  
+
+{
+    "data_sources": [
+        {
+            "type": "azure_search",
+            "parameters": {
+                "endpoint": "{{aiSearchBaseUrl}}",
+                "key": "{{aiSearchApiKey}}",
+                "index_name": "{{aiSearchIndex}}",
+                "queryType": "simple",
+                "filter": "FileName eq '{{filename}}'"
+            }
+        }
+    ],
+    "messages": [
+        {
+      "role": "system",
+      "content": "You are an AI assistant that helps users find information within their uploaded documents. The user uploaded the following files: [{{filename}}]"
+        },
+        {
+            "role": "user",
+            "content": "summarize it in max 50 words"
+        }
+    ]
+}

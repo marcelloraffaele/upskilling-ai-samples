@@ -1,0 +1,27 @@
+@aiSearchIndex = "aifoundry-cv-index"
+
+POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}}
+Content-Type: application/json
+api-key: {{openaiApiKey}}
+
+{
+    "data_sources": [
+        {
+            "type": "azure_search",
+            "parameters": {
+                "endpoint": "'{{aiSearchBaseUrl}}'",
+                "index_name": "'{{aiSearchIndex}}'",
+                "authentication": {
+                    "type": "api_key",
+                    "value": "'{{aiSearchApiKey}}'"
+                }
+            }
+        }
+    ],
+    "messages": [
+        {
+            "role": "user",
+            "content": "Who is DRI?",
+        }
+    ]
+}

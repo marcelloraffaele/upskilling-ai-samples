@@ -8,7 +8,9 @@
             "openaiBaseUrl": "https://......openai.azure.com",
             "openaiApiKey": "......",
             "openaiDeploymentId": "gpt-4o",
-            "openaiApiVersion": "2024-05-01-preview"
+            "openaiApiVersion": "2024-05-01-preview",
+            "embeddingEndpoint": "https://.......openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-07-01-preview",
+            "embeddingKey": "..."
         }
     }
 }
