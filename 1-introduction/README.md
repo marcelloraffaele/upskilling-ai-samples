@@ -71,4 +71,8 @@ if a buy a product can i change it ?
 
 ## 7. Create a Python script to interact with OpenAI
 1. From the AI Foundry, click on 'view code' and choose "Python"
-2. Select 'Key based authentication' and copy the code or open the 3.simple-chat.py file 
+2. Select 'Key based authentication' and copy the code or open the 3.completion.py file
+3. After you can see also the code for 4.faq-chat.py
+
+## 8. Create a Jupiter notebook to interact with OpenAI
+1. From the AI Foundry, click on 'view code' and choose "Python" or open the 5.faq-notebook.ipynb file
