@@ -1,0 +1,14 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "rest-client.environmentVariables": {
+        "$shared": {},
+        "dev": {
+            "aiSearchBaseUrl": "https://......search.windows.net",
+            "aiSearchApiKey": "....",
+            "openaiBaseUrl": "https://......openai.azure.com",
+            "openaiApiKey": "......",
+            "openaiDeploymentId": "gpt-4o",
+            "openaiApiVersion": "2024-05-01-preview"
+        }
+    }
+}
