@@ -1,6 +1,8 @@
 ### completion with data source indexed on Azure Search
 @search-index = "aifoundry-cv-index"
 @query1 = "Is there a UI/UX designer in New York."
+# query type: simple, vector, vector_simple_hybrid
+@queryType = "vector_simple_hybrid"
 
 curl -i -X POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}} \
 -H "Content-Type: application/json" \
@@ -17,7 +19,21 @@ curl -i -X POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat
                 "authentication": {
                         "type": "api_key",
                         "key": "'{{aiSearchApiKey}}'"
+                },
+                "semantic_configuration": "azureml-default",
+                "embedding_dependency": {
+                    "type": "endpoint",
+                    "endpoint": "'{{embeddingEndpoint}}'",
+                    "authentication": {
+                        "type": "api_key",
+                        "key": "'{{embeddingKey}}'"
                     }
+                },
+                "query_type": "'{{queryType}}'",
+                "in_scope": true,
+                "role_information": "You are an AI assistant that helps people find information.",
+                "strictness": 3,
+                "top_n_documents": 5
             }
         }
     ],
