@@ -17,6 +17,7 @@ Samples for upskilling AI knowledge
    ```
 
 3. **Configure environment**
+
    **Configure the .env file**:
    ```bash
    cp .env.local .env

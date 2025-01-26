@@ -14,6 +14,15 @@ search_endpoint = os.getenv("AZURE_AI_SEARCH_ENDPOINT")
 search_key = os.getenv("AZURE_AI_SEARCH_API_KEY")
 search_index = "aifoundry-cv-index"
 
+embeddingDeploymentName = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME")
+embeddingEndpoint = "https://"+embeddingDeploymentName+".openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-07-01-preview"
+embeddingKey = api_key
+
+# Set the query type to use for the search
+#queryType = "simple"
+#queryType = "vector"
+queryType = "vector_simple_hybrid"
+
 # Initialize Azure OpenAI Service client with key-based authentication    
 client = AzureOpenAI(
     azure_endpoint=endpoint,
@@ -29,7 +38,7 @@ completion = client.chat.completions.create(
         },
         {
             "role": "user",
-            "content": "Find a UI/UX designer in New York. answer in only 100 words",
+            "content": "Is there a UI/UX designer in New York.",
         },
     ],
     extra_body={
@@ -39,10 +48,27 @@ completion = client.chat.completions.create(
                 "parameters": {
                     "endpoint": search_endpoint,
                     "index_name": search_index,
+                    
                     "authentication": {
                         "type": "api_key",
                         "key": search_key
-                    }
+                    },
+
+                    "semantic_configuration": "azureml-default",
+
+                    "embedding_dependency": {
+                        "type": "endpoint",
+                        "endpoint": embeddingEndpoint,
+                        "authentication": {
+                            "type": "api_key",
+                            "key": embeddingKey
+                        }
+                    },
+                    "query_type": queryType,
+                    "in_scope": True,
+                    "role_information": "You are an AI assistant that helps people find information.",
+                    "strictness": 3,
+                    "top_n_documents": 5
                 }
             }
         ]
@@ -50,6 +76,7 @@ completion = client.chat.completions.create(
 )
 
 #print(completion.model_dump_json(indent=2))
+
 
 content = completion.choices[0].message.content
 print("AI: " + content)
