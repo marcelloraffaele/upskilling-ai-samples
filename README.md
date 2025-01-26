@@ -16,7 +16,8 @@ Samples for upskilling AI knowledge
    source .venv/bin/activate  # Windows: .venv\Scripts\activate
    ```
 
-3. **Configure environment**:
+3. **Configure environment**
+   **Configure the .env file**:
    ```bash
    cp .env.local .env
    ```
@@ -26,6 +27,12 @@ Samples for upskilling AI knowledge
    - `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME`: Your OpenAI chat deployment name
 
    > **Note**: The model specified in `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` must be supported by Azure AI Agents Service or Assistants API. See [supported models](https://learn.microsoft.com/en-us/azure/ai-services/agents/concepts/model-region-support?tabs=python#azure-openai-models) for details.
+
+   **Configure the settings.json file**:
+   ```bash
+   cp settings-template.json settings.json
+   ```
+   Update `settings.json` with your OpenAI values.
 
 4. **Install dependencies**:
    ```bash
