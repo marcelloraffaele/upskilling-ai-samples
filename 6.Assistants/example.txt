@@ -1,0 +1,8 @@
+Name,Age,City
+Raffaele,40,Rome
+Mark,28,Paris
+Michael,52,Berlin
+Sara,18,New York
+Jimmy,9,Rome
+Remi,33,London
+Rex,12,Madrid
