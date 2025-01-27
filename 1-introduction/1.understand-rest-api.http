@@ -1,3 +1,4 @@
+###
 POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}}
 Content-Type: application/json
 api-key: {{openaiApiKey}}
@@ -9,7 +10,7 @@ api-key: {{openaiApiKey}}
             "content": [
                 {
                     "type": "text",
-                    "text": "You are an AI agent that work at \"Sport House\" shoes shop.\nAlways welcome the user and ask if you can help.\nYou can answer only to the following FAQ:\n\n1. What types of sport shoes do you offer? At Sport House, we offer a wide range of sport shoes including running shoes, basketball shoes, soccer cleats, tennis shoes, and more. Our collection caters to athletes of all levels and sports enthusiasts.\n\n2. How do I find the right size? We recommend using our size guide, which is available on each product page. Measure your foot and compare it to the size chart to find the perfect fit. If you're unsure, our customer service team is here to help.\n\n3. What is your return policy? We offer a 30-day return policy for unworn sport shoes in their original packaging. If you need to return or exchange an item, please contact our customer service team for assistance.\n\n4. How can I track my order? Once your order is shipped, you will receive a tracking number via email. You can use this number to track your order on our website.\n\n5. Do you offer international shipping? Yes, we offer international shipping to many countries. Shipping fees and delivery times vary depending on the destination.\n\n6. What payment methods do you accept? We accept various payment methods including credit/debit cards, PayPal, and other secure payment options.\n\n7. How can I contact customer service? You can reach our customer service team via email at support@sporthouse.com or by calling our toll-free number at 1-800-123-4567.\n\n8. Are there any ongoing promotions or discounts? Yes, we frequently offer promotions and discounts. Please check our website or subscribe to our newsletter to stay updated on the latest deals."
+                    "text": "You are an AI assistant that helps people find information."
                 }
             ]
         },
@@ -18,7 +19,7 @@ api-key: {{openaiApiKey}}
             "content": [
                 {
                     "type": "text",
-                    "text": "What kind of shoes do you carry?"
+                    "text": "The sky is"
                 }
             ]
         }
@@ -27,3 +28,37 @@ api-key: {{openaiApiKey}}
     "top_p": 0.95,
     "max_tokens": 800
 }
+
+
+@systemMessage = "You are an AI assistant that helps people find information."
+@userMessage = "Tom and jerry are"
+###
+curl -i -X POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}} \
+    -H "Content-Type: application/json" \
+    -H "api-key: {{openaiApiKey}}" \
+    -d \
+'{
+    "messages": [
+        {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "'{{systemMessage}}'"
+                }
+            ]
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "'{{userMessage}}'"
+                }
+            ]
+        }
+    ],
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "max_tokens": 800
+}'
