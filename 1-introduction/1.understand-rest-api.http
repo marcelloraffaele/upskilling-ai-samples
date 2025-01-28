@@ -1,37 +1,5 @@
-###
-POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}}
-Content-Type: application/json
-api-key: {{openaiApiKey}}
-
-{
-    "messages": [
-        {
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "You are an AI assistant that helps people find information."
-                }
-            ]
-        },
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "The sky is"
-                }
-            ]
-        }
-    ],
-    "temperature": 0.7,
-    "top_p": 0.95,
-    "max_tokens": 800
-}
-
-
 @systemMessage = "You are an AI assistant that helps people find information."
-@userMessage = "Tom and jerry are"
+@userMessage = "the sky is"
 ###
 curl -i -X POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}} \
     -H "Content-Type: application/json" \
