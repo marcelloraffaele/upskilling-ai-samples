@@ -49,6 +49,7 @@ async def main():
 
     # Create a history of the conversation
     history = ChatHistory()
+    #history.add_system_message("You are a Lights Assistant. print always the status of the lights.")
 
     # Initiate a back-and-forth chat
     userInput = None
