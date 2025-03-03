@@ -40,7 +40,6 @@ def deepseekCompletion(messageList):
 
 def openaiCompletion(messageList):
     print("In completion: " + str(messageList))
-    load_dotenv()
 
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")  
     deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")  
