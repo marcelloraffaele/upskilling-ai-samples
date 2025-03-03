@@ -7,17 +7,29 @@ from enum import Enum
 class ModelType(Enum):
     OPENAI = "openai"
     DEEPSEEK = "deepseek"
+    PHI = "phi"
 
 load_dotenv()
 
 def completion(messageList, modelType):
     if modelType == ModelType.OPENAI:
-        return openaiCompletion(messageList)
+        client = openaiClient(messageList)
     
     elif modelType == ModelType.DEEPSEEK:
-        return deepseekCompletion(messageList)
+        client = deepseekclient(messageList)
+    
+    #elif modelType == ModelType.PHI:
+    else:
+        client = phiClient(messageList)
+    
+    payload = {
+        "messages": messageList,
+        "max_tokens": 2048
+    }
+    response = client.complete(payload)
+    return response.choices[0].message.content
 
-def deepseekCompletion(messageList):
+def deepseekclient(messageList):
     print("In completion: " + str(messageList))
 
     endpoint = os.getenv("DEEPSEEK_ENDPOINT") 
@@ -29,16 +41,10 @@ def deepseekCompletion(messageList):
         endpoint=endpoint,
         credential=AzureKeyCredential(api_key)
     )
+    return client
+    
 
-    payload = {
-        "messages": messageList,
-        "max_tokens": 2048
-    }
-    response = client.complete(payload)
-
-    return response.choices[0].message.content
-
-def openaiCompletion(messageList):
+def openaiClient(messageList):
     print("In completion: " + str(messageList))
 
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")  
@@ -51,10 +57,18 @@ def openaiCompletion(messageList):
         credential=AzureKeyCredential(api_key)
     )
 
-    payload = {
-        "messages": messageList,
-        "max_tokens": 2048
-    }
-    response = client.complete(payload)
+    return client
 
-    return response.choices[0].message.content
+def phiClient(messageList):
+    print("In completion: " + str(messageList))
+
+    endpoint = os.getenv("PHI_ENDPOINT") 
+    api_key = os.getenv("PHI_API_KEY", '')
+    if not api_key:
+        raise Exception("A key should be provided to invoke the endpoint")
+
+    client = ChatCompletionsClient(
+        endpoint=endpoint,
+        credential=AzureKeyCredential(api_key)
+    )
+    return client

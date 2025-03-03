@@ -18,7 +18,12 @@ def call(sm, cm, model_choice):
         messageList.append(m)
     
     # Use the selected model type
-    model_type = aiutil.ModelType.DEEPSEEK if model_choice == "DeepSeek" else aiutil.ModelType.OPENAI
+    if model_choice == "DeepSeek":
+        model_type = aiutil.ModelType.DEEPSEEK
+    elif model_choice == "Phi":
+        model_type = aiutil.ModelType.PHI
+    else:
+        model_type = aiutil.ModelType.OPENAI
     res = aiutil.completion(messageList, model_type)
     return res
 
@@ -33,24 +38,29 @@ if "chatMessages" not in st.session_state:
     st.session_state.chatMessages = []
 
 if "model_choice" not in st.session_state:
-    st.session_state.model_choice = "DeepSeek"
+    st.session_state.model_choice = "OpenAI"
 
 # UI Controls sidebar
 with st.sidebar:
     # Model selection
     model_choice = st.selectbox(
         "Select AI Model",
-        ["OpenAI", "DeepSeek"],
+        ["OpenAI", "DeepSeek", "Phi"],
         index=0,  # Set OpenAI (index 0) as default
         key="model_select"
     )
     if model_choice != st.session_state.model_choice:
         st.session_state.model_choice = model_choice
 
-# Create text area with a different key and update systemMessage when changed
-system_message_input = st.text_area("System message", value=st.session_state.systemMessage, key="system_message_input")
-if system_message_input != st.session_state.systemMessage:
-    st.session_state.systemMessage = system_message_input
+    # Create text area with a different key and update systemMessage when changed
+    system_message_input = st.text_area("System message", value=st.session_state.systemMessage, key="system_message_input")
+    if system_message_input != st.session_state.systemMessage:
+        st.session_state.systemMessage = system_message_input
+
+    # Reset button for clearing conversation
+    if st.button("Reset Conversation"):
+        st.session_state.chatMessages = []
+        st.rerun()  # Rerun the app to refresh the UI
 
 if prompt := st.chat_input():
     send_message(prompt)
