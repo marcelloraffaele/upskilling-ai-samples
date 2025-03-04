@@ -27,6 +27,14 @@ def call(sm, cm, model_choice):
     res = aiutil.completion(messageList, model_type)
     return res
 
+# Set the page configuration
+st.set_page_config(
+    page_title="AI Chat",
+    page_icon="💬",
+    layout="wide",  # Optional: You can set to "centered" or "wide"
+    initial_sidebar_state="expanded"  # Optional: You can set sidebar to be "expanded" or "collapsed"
+)
+
 # Set up the Streamlit app
 st.title("AI Chat")
 
