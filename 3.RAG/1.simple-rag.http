@@ -1,6 +1,9 @@
 ### completion with data source indexed on Azure Search
-@search-index = "aifoundry-cv-index"
-@query1 = "Is there a UI/UX designer in New York."
+#@search-index = "aifoundry-cv-index"
+#@query1 = "Is there a UI/UX designer in New York."
+@search-index = "aifoundry-contoso-index"
+@query1 = "tell me something about workplace safety program"
+
 
 curl -i -X POST {{openaiBaseUrl}}/openai/deployments/{{openaiDeploymentId}}/chat/completions?api-version={{openaiApiVersion}} \
 -H "Content-Type: application/json" \
