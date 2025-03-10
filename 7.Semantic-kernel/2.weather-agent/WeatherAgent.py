@@ -77,7 +77,7 @@ async def main():
         print("Assistant > " + str(response))
 
         # Add the message from the agent to the chat history
-        history.add_message(response)
+        history.add_assistant_message(response)
 
         
 
