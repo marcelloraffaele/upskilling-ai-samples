@@ -1,4 +1,5 @@
 openai
+openai-agents
 python_dotenv
 markitdown  # parse any files to md
 semantic-kernel
