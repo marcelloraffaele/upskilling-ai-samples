@@ -39,4 +39,7 @@ Samples for upskilling AI knowledge
    ```bash
    # Install requirements
    pip install -r requirements.txt
+
+   # if you have installed dependencies some time ago, I recommend to update them
+   pip install --upgrade -r requirements.txt
    ```

@@ -71,11 +71,13 @@ async def main():
             kernel=kernel,
         )
 
+        strResult = str(result)
+        
         # Print the results
-        print("Assistant > " + str(result))
+        print("Assistant > " + strResult)
 
         # Add the message from the agent to the chat history
-        history.add_assistant_message(result)
+        history.add_assistant_message( strResult )
 
 # Run the main function
 if __name__ == "__main__":
