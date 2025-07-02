@@ -176,3 +176,5 @@ settings.json
 # c# ignore
 bin/
 obj/
+
+*.sln
