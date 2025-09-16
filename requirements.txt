@@ -5,7 +5,10 @@ markitdown  # parse any files to md
 semantic-kernel
 promptflow
 https://github.com/Azure-Samples/aoai-realtime-audio-sdk/releases/download/py%2Fv0.5.3/rtclient-0.5.3.tar.gz
-azure-ai-inference
 streamlit
 audio-recorder-streamlit
+azure-ai-inference
 azure-ai-projects
+azure-ai-agents
+azure-identity
+aiohttp
