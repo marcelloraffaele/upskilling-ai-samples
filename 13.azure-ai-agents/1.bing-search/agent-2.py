@@ -1,11 +1,10 @@
 import os, time, json
 from typing import Optional
 from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
 from azure.ai.agents import AgentsClient
-from azure.ai.agents.models import DeepResearchTool, MessageRole, ThreadMessage
+from azure.identity import DefaultAzureCredential
+from azure.ai.agents.models import BingGroundingTool,MessageRole, ThreadMessage
 from dotenv import load_dotenv
-
 # Load the environment variables from the .env file
 load_dotenv()
 
@@ -18,6 +17,10 @@ def fetch_and_print_new_agent_response(
         thread_id=thread_id,
         role=MessageRole.AGENT,
     )
+
+    #if response:
+    #    print(f"response dump={json.dumps(response.as_dict(), indent=2)}")
+
     if not response or response.id == last_message_id:
         return last_message_id  # No new content
 
@@ -28,7 +31,6 @@ def fetch_and_print_new_agent_response(
         print(f"URL Citation: [{ann.url_citation.title}]({ann.url_citation.url})")
 
     return response.id
-
 
 def create_research_summary(
         message : ThreadMessage,
@@ -57,35 +59,33 @@ def create_research_summary(
     print(f"Research summary written to '{filepath}'.")
 
 
+# Create an Azure AI Client from an endpoint, copied from your Azure AI Foundry project.
+# You need to login to Azure subscription via Azure CLI and set the environment variables
+project_endpoint = os.environ["PROJECT_ENDPOINT"]  # Ensure the PROJECT_ENDPOINT environment variable is set
+
+# Create an AIProjectClient instance
 project_client = AIProjectClient(
-    endpoint=os.environ["PROJECT_ENDPOINT"],
-    credential=DefaultAzureCredential(),
+    endpoint=project_endpoint,
+    credential=DefaultAzureCredential()  # Use Azure Default Credential for authentication
 )
 
+#conn_id = os.environ["BING_CONNECTION_NAME"]  # Ensure the BING_CONNECTION_NAME environment variable is set
 conn_id = project_client.connections.get(name=os.environ["BING_RESOURCE_NAME"]).id
 
+# Initialize the Bing Grounding tool
+bing = BingGroundingTool(connection_id=conn_id)
 
-# Initialize a Deep Research tool with Bing Connection ID and Deep Research model deployment name
-deep_research_tool = DeepResearchTool(
-    bing_grounding_connection_id=conn_id,
-    deep_research_model=os.environ["DEEP_RESEARCH_MODEL_DEPLOYMENT_NAME"],
-)
-
-# Create Agent with the Deep Research tool and process Agent run
 with project_client:
 
     with project_client.agents as agents_client:
 
-        # Create a new agent that has the Deep Research tool attached.
-        # NOTE: To add Deep Research to an existing agent, fetch it with `get_agent(agent_id)` and then,
-        # update the agent with the Deep Research tool.
+        # Create an agent with the Bing Grounding tool
         agent = agents_client.create_agent(
-            model=os.environ["MODEL_DEPLOYMENT_NAME"],
-            name="my-agent",
-            instructions="You are a helpful Agent that assists in researching scientific topics.",
-            tools=deep_research_tool.definitions,
+            model=os.environ["MODEL_DEPLOYMENT_NAME"],  # Model deployment name
+            name="my-agent",  # Name of the agent
+            instructions="You are a helpful agent. please provide internediate messages.",  # Instructions for the agent
+            tools=bing.definitions,  # Attach the Bing Grounding tool
         )
-
         # [END create_agent_with_deep_research_tool]
         print(f"Created agent, ID: {agent.id}")
 
@@ -96,20 +96,15 @@ with project_client:
         # Create message to thread
         message = agents_client.messages.create(
             thread_id=thread.id,
-            role="user",
-            content=(
-                "Give me the latest research into quantum computing over the last year. In am interested in Hardware advancements in particular on superconducting qubits"
-            ),
+            role="user",  # Role of the message sender
+            content="do this research for me, get the list of germany football player of the 2006 and for each one get infromation about name, surname, latest football team, last year playing.",  # Message content
         )
-        print(f"Created message, ID: {message.id}")
+        print(f"Created message, ID: {message['id']}")
 
-        print(f"Start processing the message... this may take a few minutes to finish. Be patient!")
-        # Poll the run as long as run status is queued or in progress
         run = agents_client.runs.create(thread_id=thread.id, agent_id=agent.id)
 
-# in case you want to cancel the run
-#agents_client.runs.cancel(run_id=run.id, thread_id=thread.id)
-
+        
+        
         last_message_id = None
         while run.status in ("queued", "in_progress"):
             time.sleep(1)
