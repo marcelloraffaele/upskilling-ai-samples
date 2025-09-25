@@ -20,123 +20,38 @@ load_dotenv()
 
 logger = get_logger()
 
+
+
 class LoggingToolSet(ToolSet):
 
-    def __init__(self):
-        super().__init__()
-        logger.info("Initialized LoggingToolSet")
+    def execute_tool_calls(self, tool_calls: List[Any]) -> Any:
+        result = super().execute_tool_calls(tool_calls)
+        # Custom logic: log or store the result
+        logger.info(f"-------------->Tool calls: {tool_calls}, Output: {result}")
+        return result
 
-    def execute_tool_calls(self, tool_calls: List[Any]) -> List[dict]:
+class RichToolSet(ToolSet):
+    def execute_tool_calls(self, tool_calls: list) -> list:
         """
-        Execute the upstream calls, printing only two lines per function:
-        1) The function name + its input arguments
-        2) The function name + its output result
+        Returns a list of dicts, each containing:
+         - tool_call input
+         - raw tool output
+         - metadata like execution time
         """
+        from time import perf_counter
 
-        logger.info("***********************************************************************Tool calls:")
-
-        # For each function call, print the input arguments
-        for c in tool_calls:
-            if hasattr(c, "function") and c.function:
-                fn_name = c.function.name
-                fn_args = c.function.arguments
-                logger.info(f"{fn_name} inputs > {fn_args} (id:{c.id})")
-
-        # Execute the tool calls (superclass logic)
-        raw_outputs = super().execute_tool_calls(tool_calls)
-
-        # Print the output of each function call
-        for item in raw_outputs:
-            logger.info(f"output > {item['output']}")
-
-        return raw_outputs
-    
-    async def execute_tool_calls(self, tool_calls: List[Any]) -> Any:
-        """
-        Execute a tool of the specified type with the provided tool calls concurrently.
-
-        :param List[Any] tool_calls: A list of tool calls to execute.
-        :return: The output of the tool operations.
-        :rtype: Any
-        """
-        logger.info("*********************************************************async Tool calls:")
-
-        raw_outputs = super().execute_tool_calls(tool_calls)
-
-        return raw_outputs
-
-class MyEventHandler(AgentEventHandler):
-    def __init__(self):
-        super().__init__()
-        self._current_message_id = None
-        self._accumulated_text = ""
-
-    def on_message_delta(self, delta: MessageDeltaChunk) -> None:
-        # If a new message id, start fresh
-        if delta.id != self._current_message_id:
-            # First, if we had an old message that wasn't completed, finish that line
-            if self._current_message_id is not None:
-                print()  # move to a new line
-            
-            self._current_message_id = delta.id
-            self._accumulated_text = ""
-            print("\nassistant > ", end="")  # prefix for new message
-
-        # Accumulate partial text
-        partial_text = ""
-        if delta.delta.content:
-            for chunk in delta.delta.content:
-                partial_text += chunk.text.get("value", "")
-        self._accumulated_text += partial_text
-
-        # Print partial text with no newline
-        print(partial_text, end="", flush=True)
-
-    def on_thread_message(self, message: ThreadMessage) -> None:
-        # When the assistant's entire message is "completed", print a final newline
-        if message.status == "completed" and message.role == "assistant":
-            print()  # done with this line
-            self._current_message_id = None
-            self._accumulated_text = ""
-        else:
-            # For other roles or statuses, you can log if you like:
-            print(f"{message.status.name.lower()} (id: {message.id})")
-
-    def on_thread_run(self, run: ThreadRun) -> None:
-        print(f"status > {run.status.name.lower()}")
-        if run.status == "failed":
-            print(f"error > {run.last_error}")
-
-    def on_run_step(self, step: RunStep) -> None:
-        print(f"{step.type.name.lower()} > {step.status.name.lower()}")
-
-    def on_run_step_delta(self, delta: RunStepDeltaChunk) -> None:
-        # If partial tool calls come in, we log them
-        if delta.delta.step_details and delta.delta.step_details.tool_calls:
-            for tcall in delta.delta.step_details.tool_calls:
-                if getattr(tcall, "function", None):
-                    if tcall.function.name is not None:
-                        print(f"tool call > {tcall.function.name}")
-
-    def on_unhandled_event(self, event_type: str, event_data):
-        print(f"unhandled > {event_type} > {event_data}")
-
-    def on_error(self, data: str) -> None:
-        print(f"error > {data}")
-
-    def on_done(self) -> None:
-        print("done")
-
-    def upsert_tool_call(tcall: dict):
-        """
-        1) Check the call type
-        2) If "function", gather partial name/args
-        3) If "bing_grounding" or "file_search", show a pending bubble
-        """
-        t_type = tcall.get("type", "")
-        call_id = tcall.get("id")
-
-        print(f"upsert_tool_call: t_type={t_type}, call_id={call_id}")
+        enriched_outputs = []
+        for tc in tool_calls:
+            start = perf_counter()
+            # Here, you might want to call some single-tool execution
+            output = super().execute_tool_calls([tc])
+            end = perf_counter()
+            enriched_outputs.append({
+                "tool_call": tc,
+                "output": output,
+                "elapsed_seconds": end - start
+            })
+        return enriched_outputs
 
 
 def fetch_and_print_new_agent_response(
@@ -206,7 +121,7 @@ conn_id = project_client.connections.get(name=os.environ["BING_RESOURCE_NAME"]).
 # Initialize the Bing Grounding tool
 bing_tool = BingGroundingTool(connection_id=conn_id)
 
-toolset = LoggingToolSet()
+toolset = RichToolSet()
 toolset.add(bing_tool)
 
 #for tool in toolset._tools:
@@ -300,6 +215,7 @@ with project_client:
 
             # Check if there are tool calls in the step details
             step_details = step.get("step_details", {})
+            
             tool_calls = step_details.get("tool_calls", [])
 
             if tool_calls:

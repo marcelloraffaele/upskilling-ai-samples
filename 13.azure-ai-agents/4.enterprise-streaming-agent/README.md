@@ -1,0 +1,2 @@
+This example as been extracted from the [Azure-Samples/azure-ai-agent-service-enterprise-demo](https://github.com/Azure-Samples/azure-ai-agent-service-enterprise-demo/) github project.
+It has been modified to work with the latest version of the Azure AI Agents SDK and to be more concise.

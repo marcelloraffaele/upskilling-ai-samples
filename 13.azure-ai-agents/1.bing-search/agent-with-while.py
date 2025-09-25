@@ -101,9 +101,11 @@ with project_client:
         )
         print(f"Created message, ID: {message['id']}")
 
-        run = agents_client.runs.create(thread_id=thread.id, agent_id=agent.id)
-
-        
+        run = agents_client.runs.create(
+            thread_id=thread.id, 
+            agent_id=agent.id
+            )
+       
         
         last_message_id = None
         while run.status in ("queued", "in_progress"):
