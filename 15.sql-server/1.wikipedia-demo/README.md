@@ -1,0 +1,1 @@
+https://learn.microsoft.com/en-us/azure/azure-sql/database/ai-artificial-intelligence-intelligent-applications?view=azuresql#azure-ai-search

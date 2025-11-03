@@ -11,5 +11,8 @@ azure-ai-inference
 azure-ai-projects
 azure-ai-agents
 azure-identity
+#azure-search-documents==11.5.2
+azure-search-documents==11.7.0b1
+azure-storage-blob
 aiohttp
 gradio
