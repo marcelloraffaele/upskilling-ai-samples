@@ -16,3 +16,4 @@ azure-search-documents==11.7.0b1
 azure-storage-blob
 aiohttp
 gradio
+jsonref

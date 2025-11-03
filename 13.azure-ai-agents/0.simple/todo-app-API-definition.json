@@ -1,0 +1,220 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Todo API",
+        "description": "A simple Todo API",
+        "version": "1.0"
+    },
+    "servers": [{
+        "url": "http://apimdemo2537494.azure-api.net/todoapp"
+    }, {
+        "url": "https://apimdemo2537494.azure-api.net/todoapp"
+    }],
+    "paths": {
+        "/todos": {
+            "get": {
+                "summary": "Get all todos",
+                "description": "Get all todos",
+                "operationId": "get-todos",
+                "responses": {
+                    "200": {
+                        "description": "List of todos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Todo"
+                                    }
+                                },
+                                "example": [{
+                                    "id": 0,
+                                    "description": "string",
+                                    "creationDate": "string",
+                                    "expirationDate": "string",
+                                    "category": "string",
+                                    "state": "done"
+                                }]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new todo",
+                "description": "Create a new todo",
+                "operationId": "post-todos",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["description"],
+                                "type": "object",
+                                "properties": {
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "expirationDate": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "description": "string",
+                                "category": "string",
+                                "expirationDate": "string"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created todo"
+                    }
+                }
+            }
+        },
+        "/todos/{id}": {
+            "get": {
+                "summary": "Get a todo by ID",
+                "description": "Get a todo by ID",
+                "operationId": "get-todos-id",
+                "parameters": [{
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }],
+                "responses": {
+                    "200": {
+                        "description": "A todo object"
+                    },
+                    "404": {
+                        "description": "Todo not found"
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update a todo",
+                "description": "Update a todo",
+                "operationId": "put-todos-id",
+                "parameters": [{
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "expirationDate": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "state": {
+                                        "enum": ["done", "active", "canceled"],
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "description": "string",
+                                "category": "string",
+                                "expirationDate": "string",
+                                "state": "done"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated todo"
+                    },
+                    "404": {
+                        "description": "Todo not found"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a todo",
+                "description": "Delete a todo",
+                "operationId": "delete-todos-id",
+                "parameters": [{
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }],
+                "responses": {
+                    "204": {
+                        "description": "Todo deleted successfully"
+                    },
+                    "404": {
+                        "description": "Todo not found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Todo": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "creationDate": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expirationDate": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "enum": ["done", "active", "canceled"],
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "apiKeyHeader": {
+                "type": "apiKey",
+                "name": "Ocp-Apim-Subscription-Key",
+                "in": "header"
+            }
+        }
+    },
+    "security": [{
+        "apiKeyHeader": []
+    }, {
+        "apiKeyQuery": []
+    }]
+}
