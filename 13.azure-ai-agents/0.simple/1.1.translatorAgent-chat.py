@@ -54,7 +54,7 @@ with project_client:
 
         # Fetch and log all messages
         message = project_client.agents.messages.get_last_message_by_role(thread_id=thread.id, role="assistant")
-        print(f"Translated text: {message.content[0].text}")
+        print(f"Assistant msg: {message.content[0].text}")
     
     
 #    project_client.agents.delete_agent(agent.id)

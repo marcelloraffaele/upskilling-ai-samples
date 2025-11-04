@@ -26,7 +26,7 @@ with project_client:
     # Create an agent with the Bing Grounding tool
     agent = project_client.agents.create_agent(
         model=os.environ["MODEL_DEPLOYMENT_NAME"],  # Model deployment name
-        name="my-agent",  # Name of the agent
+        name="simple-bing-agent",  # Name of the agent
         instructions="You are a helpful agent",  # Instructions for the agent
         tools=bing.definitions,  # Attach the Bing Grounding tool
     )
@@ -40,7 +40,8 @@ with project_client:
     message = project_client.agents.messages.create(
         thread_id=thread.id,
         role="user",  # Role of the message sender
-        content="What is the weather in Rome today?",  # Message content
+        content="What is the weather in Rome today?",
+        #content="Get the F1 current standing and for the first three pilots get all the informations from the carrer. create a summary for each.",  # Message content
     )
     print(f"Created message, ID: {message['id']}")
 
