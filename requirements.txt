@@ -9,7 +9,7 @@ streamlit
 audio-recorder-streamlit
 azure-ai-inference
 azure-ai-projects
-azure-ai-agents
+azure-ai-agents==1.2.0b6
 azure-identity
 #azure-search-documents==11.5.2
 azure-search-documents==11.7.0b1
