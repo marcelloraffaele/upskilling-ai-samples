@@ -17,3 +17,4 @@ azure-storage-blob
 aiohttp
 gradio
 jsonref
+#pip install agent-framework --pre
