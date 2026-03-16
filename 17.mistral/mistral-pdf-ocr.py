@@ -26,7 +26,9 @@ def local_file_to_data_url(file_path):
     return f"data:{mime_type};base64,{base64_encoded_data}"
 
 
-document_url = local_file_to_data_url('../data/ocr/example1.pdf')
+document_url = local_file_to_data_url(
+    '../data/ocr/example1.pdf'
+)
 
 mistral_server_url = os.environ["MISTRAL_SERVER_URL"]
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -43,8 +45,10 @@ ocr_response = client.ocr.process(
         "type": "document_url",
         "document_url": document_url
     },
-    # table_format=None,
-    include_image_base64=True
+    table_format="markdown",
+    include_image_base64=True,
+    extract_footer=False,
+    extract_header=False
 )
 
 #print("Extracted text:")
@@ -59,3 +63,4 @@ if os.path.exists(filename):
 with open(filename, "w", encoding="utf-8") as f:
     for page in ocr_response.pages:
         f.write(page.markdown)
+        f.write("\n\n")  # Add some spacing between pages
