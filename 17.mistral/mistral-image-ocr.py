@@ -25,8 +25,7 @@ def local_image_to_data_url(image_path):
     return f"data:{mime_type};base64,{base64_encoded_data}"
 
 
-image_url = local_image_to_data_url('../data/images/receipt1.jpg')
-print(f"Data URL for the image: {image_url[:100]}...")  #
+image_url = local_image_to_data_url('../data/ocr/example2.jpg')
 
 mistral_server_url = os.environ["MISTRAL_SERVER_URL"]
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -55,5 +54,7 @@ filename = "output.md"
 if os.path.exists(filename):
     #delete the file if it already exists
     os.remove(filename)
-with open(filename, "w") as f:
-    f.write(ocr_response.pages[0].markdown)
+
+with open(filename, "w", encoding="utf-8") as f:
+    for page in ocr_response.pages:
+        f.write(page.markdown)
