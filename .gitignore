@@ -178,3 +178,6 @@ bin/
 obj/
 
 *.sln
+
+__blobstorage__
+__azurite*

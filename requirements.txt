@@ -19,6 +19,8 @@ aiohttp
 gradio
 jsonref
 #pip install agent-framework --pre
+# pip install agent-framework-devui --pre
+# pip install agent-framework-ag-ui --pre
 
 #mistral
 mistralai
