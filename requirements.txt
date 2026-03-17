@@ -8,7 +8,8 @@ https://github.com/Azure-Samples/aoai-realtime-audio-sdk/releases/download/py%2F
 streamlit
 audio-recorder-streamlit
 azure-ai-inference
-azure-ai-projects
+#pip install --pre azure-ai-projects>=2.0.0b4
+azure-ai-projects>=2.0.0b4
 azure-ai-agents==1.2.0b6
 azure-identity
 #azure-search-documents==11.5.2

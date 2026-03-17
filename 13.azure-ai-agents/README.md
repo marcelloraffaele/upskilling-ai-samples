@@ -1,0 +1,1 @@
+https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/ai/azure-ai-projects/samples

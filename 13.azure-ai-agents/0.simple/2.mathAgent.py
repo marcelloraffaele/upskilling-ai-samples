@@ -3,6 +3,8 @@ from pathlib import Path
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from azure.ai.agents.models import CodeInterpreterTool
+from azure.ai.projects.models import PromptAgentDefinition
+import jsonref
 from dotenv import load_dotenv
 # Load the environment variables from the .env file
 load_dotenv()
@@ -19,51 +21,62 @@ project_client = AIProjectClient(
 
 code_interpreter = CodeInterpreterTool()
 with project_client:
-    # Create an agent with the Code Interpreter tool
-    agent = project_client.agents.create_agent(
-        model=os.environ["MODEL_DEPLOYMENT_NAME"],  # Model deployment name
-        name="math-agent",  # Name of the agent
-        instructions="You politely help with math questions. Use the Code Interpreter tool when asked to visualize numbers.",  # Instructions for the agent
-        tools=code_interpreter.definitions,  # Attach the tool
+
+    agentName = "math-agent"
+
+    agent = None
+    try:
+        # Check if the agent already exists
+        agentDetails = project_client.agents.get(agentName)
+        if agentDetails is not None and agentDetails.versions is not None:
+            version = agentDetails.versions.latest.version
+            agent = project_client.agents.get_version(agentName, version)
+    except Exception as e:
+        agent = None
+
+    if agent is None:
+        agent = project_client.agents.create_version(
+            agent_name=agentName,
+            definition=PromptAgentDefinition(
+                model=os.environ["MODEL_DEPLOYMENT_NAME"],
+                instructions="You politely help with math questions. Use the Code Interpreter tool when asked to visualize numbers.",  # Instructions for the agent
+                tools=code_interpreter.definitions,  # Attach the tool
+            ),
+        )
+
+    print(f"Agent {agentName} already exists, ID: {agent.id}, version: {agent.version}")
+
+    openai_client = project_client.get_openai_client()
+
+    conversation = openai_client.conversations.create()
+    print(f"Created conversation (id: {conversation.id})")
+
+    openai_client.conversations.items.create(
+        conversation_id=conversation.id,
+        items=[{
+            "type": "message", 
+            "role": "user", 
+            "content": "Hi, Agent! Draw a graph for a line with a slope of 4 and y-intercept of 9."
+        }],
     )
-    print(f"Created agent, ID: {agent.id}")
 
-    # Create a thread for communication
-    thread = project_client.agents.threads.create()
-    print(f"Created thread, ID: {thread.id}")
 
-    # Add a message to the thread
-    message = project_client.agents.messages.create(
-        thread_id=thread.id,
-        role="user",  # Role of the message sender
-        content="Hi, Agent! Draw a graph for a line with a slope of 4 and y-intercept of 9.",  # Message content
-    )
-    print(f"Created message, ID: {message['id']}")
+    response = openai_client.responses.create(
+            conversation=conversation.id,
+            extra_body={"agent_reference": {"name": agent.name, "version": agent.version, "type": "agent_reference"}},
+        )
 
-    # Create and process an agent run
-    run = project_client.agents.runs.create_and_process(
-        thread_id=thread.id,
-        agent_id=agent.id,
-        additional_instructions="Please address the user as Jane Doe. The user has a premium account",
-    )
-    print(f"Run finished with status: {run.status}")
+    #print( jsonref.dumps(response.to_dict(), indent=2) )
 
-    # Check if the run failed
-    if run.status == "failed":
-        print(f"Run failed: {run.last_error}")
+    print(f"Output: {response.output_text}")
 
-    # Fetch and log all messages
-    messages = project_client.agents.messages.list(thread_id=thread.id)
-    for message in messages:
-        print(f"Role: {message.role}, Content: {message.content}")
-
-        # Save every image file in the message
-        for img in message.image_contents:
-            file_id = img.image_file.file_id
-            file_name = f"{file_id}_image_file.png"
-            project_client.agents.files.save(file_id=file_id, file_name=file_name)
-            print(f"Saved image file to: {Path.cwd() / file_name}")
-
+    # Print code executed by the code interpreter tool.
+    # [START code_output_extraction]
+    code = next((output.code for output in response.output if output.type == "code_interpreter_call"), "")
+    print(f"Code Interpreter code:")
+    print(code)
+    # [END code_output_extraction]
+    
     # Uncomment these lines to delete the agent when done
-    # project_client.agents.delete_agent(agent.id)
+    # agents_client.delete_agent(agent.id)
     # print("Deleted agent")

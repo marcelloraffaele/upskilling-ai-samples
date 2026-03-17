@@ -1,6 +1,8 @@
 import os
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
+from azure.ai.projects.models import PromptAgentDefinition
+
 from dotenv import load_dotenv
 # Load the environment variables from the .env file
 load_dotenv()
@@ -16,41 +18,36 @@ project_client = AIProjectClient(
 )
 
 with project_client:
-    # Create an agent with translation instructions
-    agent = project_client.agents.create_agent(
-        model=os.environ["MODEL_DEPLOYMENT_NAME"],  # Model deployment name
-        name="english-translator-agent",  # Name of the agent
-        instructions="You are a helpful agent that translates text to English. Translate all the message that the user will write.",  # Instructions for the agent
+
+    agentName = "english-translator-agent"
+
+    agent = None
+    try:
+        # Check if the agent already exists
+        agentDetails = project_client.agents.get(agentName)
+        if agentDetails is not None and agentDetails.versions is not None:
+            version = agentDetails.versions.latest.version
+            agent = project_client.agents.get_version(agentName, version)
+    except Exception as e:
+        agent = None
+
+    if agent is None:
+        agent = project_client.agents.create_version(
+            agent_name=agentName,
+            definition=PromptAgentDefinition(
+                model=os.environ["MODEL_DEPLOYMENT_NAME"],
+                instructions="You are a helpful agent that translates text to English. Translate all the message that the user will write.",  # Instructions for the agent
+            ),
+        )
+
+    print(f"Agent {agentName} already exists, ID: {agent.id}, version: {agent.version}")
+
+    openai_client = project_client.get_openai_client()
+    response = openai_client.responses.create(
+        input="come è il tempo oggi a Roma?",
+        extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
     )
-    print(f"Created agent, ID: {agent.id}")
-
-    # Create a thread for communication
-    thread = project_client.agents.threads.create()
-    print(f"Created thread, ID: {thread.id}")
-
-    # Add a message to the thread
-    message = project_client.agents.messages.create(
-        thread_id=thread.id,
-        role="user",  # Role of the message sender
-        content="Che tempo fa a Roma oggi?",  # Message content
-    )
-    print(f"Created message, ID: {message['id']}")
-
-    # Create and process an agent run
-    run = project_client.agents.runs.create_and_process(
-        thread_id=thread.id,
-        agent_id=agent.id
-    )
-    print(f"Run finished with status: {run.status}")
-
-    # Check if the run failed
-    if run.status == "failed":
-        print(f"Run failed: {run.last_error}")
-
-    # Fetch and log all messages
-    messages = project_client.agents.messages.list(thread_id=thread.id)
-    for message in messages:
-        print(f"Role: {message.role}, Content: {message.content}")
+    print(response.output_text)
 
     
     

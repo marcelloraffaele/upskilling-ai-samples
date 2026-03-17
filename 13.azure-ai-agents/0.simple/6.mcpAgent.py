@@ -1,162 +1,102 @@
-# https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/model-context-protocol-samples?pivots=python
+# pylint: disable=line-too-long,useless-suppression
+# ------------------------------------
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+# ------------------------------------
 
-import os, time
-from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
-from azure.ai.agents.models import (
-    ListSortOrder,
-    McpTool,
-    RequiredMcpToolCall,
-    RunStepActivityDetails,
-    SubmitToolApprovalAction,
-    ToolApproval,
-)
+"""
+DESCRIPTION:
+    This sample demonstrates how to run Prompt Agent operations
+    using MCP (Model Context Protocol) tools and a synchronous client.
+
+USAGE:
+    python sample_agent_mcp.py
+
+    Before running the sample:
+
+    pip install "azure-ai-projects>=2.0.0" python-dotenv
+
+    Set these environment variables with your own values:
+    1) AZURE_AI_PROJECT_ENDPOINT - The Azure AI Project endpoint, as found in the Overview
+       page of your Microsoft Foundry portal.
+    2) AZURE_AI_MODEL_DEPLOYMENT_NAME - The deployment name of the AI model, as found under the "Name" column in
+       the "Models + endpoints" tab in your Microsoft Foundry project.
+"""
+
+import os
 from dotenv import load_dotenv
-# Load the environment variables from the .env file
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import PromptAgentDefinition, MCPTool, Tool
+from openai.types.responses.response_input_param import McpApprovalResponse, ResponseInputParam
+
 load_dotenv()
 
-# Get MCP server configuration from environment variables
-mcp_server_url = os.environ.get("MCP_SERVER_URL", "https://learn.microsoft.com/api/mcp")
-mcp_server_label = os.environ.get("MCP_SERVER_LABEL", "learn")
+endpoint = os.environ["PROJECT_ENDPOINT"]
 
-project_client = AIProjectClient(
-    endpoint=os.environ["PROJECT_ENDPOINT"],
-    credential=DefaultAzureCredential(),
-)
-# Initialize agent MCP tool
-mcp_tool = McpTool(
-    server_label=mcp_server_label,
-    server_url=mcp_server_url,
-    allowed_tools=[],  # Optional: specify allowed tools
-)
+with (
+    DefaultAzureCredential() as credential,
+    AIProjectClient(endpoint=endpoint, credential=credential) as project_client,
+    project_client.get_openai_client() as openai_client,
+):
+    # [START tool_declaration]
+    mcp_tool = MCPTool(
+        server_label="api-specs",
+        server_url="https://gitmcp.io/Azure/azure-rest-api-specs",
+        require_approval="always",
+    )
+    # [END tool_declaration]
 
-# You can also add or remove allowed tools dynamically
-mcp_tool.allow_tool("microsoft_docs_search")
-mcp_tool.allow_tool("microsoft_docs_fetch")
-print(f"Allowed tools: {mcp_tool.allowed_tools}")
+    agent = project_client.agents.create_version(
+        agent_name="MyAgent",
+        definition=PromptAgentDefinition(
+            model=os.environ["MODEL_DEPLOYMENT_NAME"],
+            instructions="You are a helpful agent that can use MCP tools to assist users. Use the available MCP tools to answer questions and perform tasks.",
+            tools=[mcp_tool],
+        ),
+    )
+    print(f"Agent created (id: {agent.id}, name: {agent.name}, version: {agent.version})")
 
-# Create agent with MCP tool and process agent run
-with project_client:
-    agents_client = project_client.agents
+    # Create a conversation thread to maintain context across multiple interactions
+    conversation = openai_client.conversations.create()
+    print(f"Created conversation (id: {conversation.id})")
 
-    # Create a new agent.
-    # NOTE: To reuse existing agent, fetch it with get_agent(agent_id)
-    agent = agents_client.create_agent(
-        model=os.environ["MODEL_DEPLOYMENT_NAME"],
-        name="microsoft-learn-mcp-agent",
-        instructions="You are a helpful agent that can use MCP tools to assist users. Use the available MCP tools to answer questions and perform tasks.",
-        tools=mcp_tool.definitions,
+    # Send initial request that will trigger the MCP tool
+    response = openai_client.responses.create(
+        conversation=conversation.id,
+        input="Please summarize the Azure REST API specifications Readme",
+        extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
     )
 
-    print(f"Created agent, ID: {agent.id}")
-    print(f"MCP Server: {mcp_tool.server_label} at {mcp_tool.server_url}")
-
-    # Create thread for communication
-    thread = agents_client.threads.create()
-    print(f"Created thread, ID: {thread.id}")
-
-    # Create message to thread
-    message = agents_client.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content="Please how I can create a powershell azure function that implement a simple REST API for a time server?",
-    )
-    print(f"Created message, ID: {message.id}")
-
-    ## Create and process agent run in thread with MCP tools
-    #mcp_tool.update_headers("SuperSecret", "123456")
-    # mcp_tool.set_approval_mode("never")  # Uncomment to disable approval requirement
-    run = agents_client.runs.create(thread_id=thread.id, agent_id=agent.id, tool_resources=mcp_tool.resources)
-    print(f"Created run, ID: {run.id}")
-
-    while run.status in ["queued", "in_progress", "requires_action"]:
-        time.sleep(1)
-        run = agents_client.runs.get(thread_id=thread.id, run_id=run.id)
-
-        if run.status == "requires_action" and isinstance(run.required_action, SubmitToolApprovalAction):
-            tool_calls = run.required_action.submit_tool_approval.tool_calls
-            if not tool_calls:
-                print("No tool calls provided - cancelling run")
-                agents_client.runs.cancel(thread_id=thread.id, run_id=run.id)
-                break
-
-            tool_approvals = []
-            for tool_call in tool_calls:
-                if isinstance(tool_call, RequiredMcpToolCall):
-                    try:
-                        print(f"Approving tool call: {tool_call}")
-                        tool_approvals.append(
-                            ToolApproval(
-                                tool_call_id=tool_call.id,
-                                approve=True,
-                                headers=mcp_tool.headers,
-                            )
-                        )
-                    except Exception as e:
-                        print(f"Error approving tool_call {tool_call.id}: {e}")
-
-            print(f"tool_approvals: {tool_approvals}")
-            if tool_approvals:
-                agents_client.runs.submit_tool_outputs(
-                    thread_id=thread.id, run_id=run.id, tool_approvals=tool_approvals
+    # Process any MCP approval requests that were generated
+    input_list: ResponseInputParam = []
+    for item in response.output:
+        if item.type == "mcp_approval_request":
+            if item.server_label == "api-specs" and item.id:
+                # Automatically approve the MCP request to allow the agent to proceed
+                # In production, you might want to implement more sophisticated approval logic
+                input_list.append(
+                    McpApprovalResponse(
+                        type="mcp_approval_response",
+                        approve=True,
+                        approval_request_id=item.id,
+                    )
                 )
 
-        print(f"Current run status: {run.status}")
+    print("Final input:")
+    print(input_list)
 
-    print(f"Run completed with status: {run.status}")
-    if run.status == "failed":
-        print(f"Run failed: {run.last_error}")
+    # Send the approval response back to continue the agent's work
+    # This allows the MCP tool to access the GitHub repository and complete the original request
+    response = openai_client.responses.create(
+        input=input_list,
+        previous_response_id=response.id,
+        extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
+    )
 
-    # Display run steps and tool calls
-    run_steps = agents_client.run_steps.list(thread_id=thread.id, run_id=run.id)
+    print(f"Agent response: {response.output_text}")
 
-    # Loop through each step
-    for step in run_steps:
-        print(f"Step {step['id']} status: {step['status']}")
-
-        # Check if there are tool calls in the step details
-        step_details = step.get("step_details", {})
-        tool_calls = step_details.get("tool_calls", [])
-
-        if tool_calls:
-            print("  MCP Tool calls:")
-            for call in tool_calls:
-                print(f"    Tool Call ID: {call.get('id')}")
-                print(f"    Type: {call.get('type')}")
-
-        if isinstance(step_details, RunStepActivityDetails):
-            for activity in step_details.activities:
-                for function_name, function_definition in activity.tools.items():
-                    print(
-                        f'  The function {function_name} with description "{function_definition.description}" will be called.:'
-                    )
-                    if len(function_definition.parameters) > 0:
-                        print("  Function parameters:")
-                        for argument, func_argument in function_definition.parameters.properties.items():
-                            print(f"      {argument}")
-                            print(f"      Type: {func_argument.type}")
-                            print(f"      Description: {func_argument.description}")
-                    else:
-                        print("This function has no parameters")
-
-        print()  # add an extra newline between steps
-
-    # Fetch and log all messages
-    messages = agents_client.messages.list(thread_id=thread.id, order=ListSortOrder.ASCENDING)
-    print("\nConversation:")
-    print("-" * 50)
-    for msg in messages:
-        if msg.text_messages:
-            last_text = msg.text_messages[-1]
-            print(f"{msg.role.upper()}: {last_text.text.value}")
-            print("-" * 50)
-
-    # Example of dynamic tool management
-    print(f"\nDemonstrating dynamic tool management:")
-    print(f"Current allowed tools: {mcp_tool.allowed_tools}")
-
-    
-    # Clean-up and delete the agent once the run is finished.
-    # NOTE: Comment out this line if you plan to reuse the agent later.
-    #agents_client.delete_agent(agent.id)
-    #print("Deleted agent")
+    # Clean up resources by deleting the agent version
+    # This prevents accumulation of unused agent versions in your project
+    project_client.agents.delete_version(agent_name=agent.name, agent_version=agent.version)
+    print("Agent deleted")

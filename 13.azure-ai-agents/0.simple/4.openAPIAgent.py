@@ -5,6 +5,7 @@ from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 # import the folloing 
 from azure.ai.agents.models import OpenApiTool, OpenApiConnectionAuthDetails, OpenApiConnectionSecurityScheme
+from azure.ai.projects.models import PromptAgentDefinition
 
 from dotenv import load_dotenv
 # Load the environment variables from the .env file
@@ -14,13 +15,15 @@ load_dotenv()
 # Retrieve the project endpoint from environment variables
 project_endpoint = os.environ["PROJECT_ENDPOINT"]
 model_name = os.environ["MODEL_DEPLOYMENT_NAME"]
+agentName = "todo-openapi-agent"
 
-
-with AIProjectClient(
+# Create an AIProjectClient instance
+project_client = AIProjectClient(
     endpoint=project_endpoint,
-    credential=DefaultAzureCredential()
-) as project_client:
-    agents_client = project_client.agents
+    credential=DefaultAzureCredential()  # Use Azure Default Credential for authentication
+)
+
+with project_client:
 
     # Load the OpenAPI specification for the todo app from a local JSON file
     with open(os.path.join(os.path.dirname(__file__), "todo-app-API-definition.json"), "r") as f:
@@ -38,63 +41,48 @@ with AIProjectClient(
         name="get_todo", spec=openapi_todo, description="Retrieve todo information", auth=auth
     )
 
-    # Create an agent and run user's request with function calls
-    agent = agents_client.create_agent(
-        model=os.environ["MODEL_DEPLOYMENT_NAME"],
-        name="todo-openapi-agent",
-        instructions="You are a helpful agent",
-        tools=openapi_tool.definitions
-    )
-    print(f"Created agent, ID: {agent.id}")
+    agent = None
+    try:
+        # Check if the agent already exists
+        agentDetails = project_client.agents.get(agentName)
+        if agentDetails is not None and agentDetails.versions is not None:
+            version = agentDetails.versions.latest.version
+            agent = project_client.agents.get_version(agentName, version)
+    except Exception as e:
+        agent = None
 
-    thread = agents_client.threads.create()
-    print(f"Created thread, ID: {thread.id}")
+    if agent is None:
+        agent = project_client.agents.create_version(
+            agent_name=agentName,
+            definition=PromptAgentDefinition(
+                model=os.environ["MODEL_DEPLOYMENT_NAME"],
+                instructions="You are a helpful agent",
+                tools=openapi_tool.definitions
+            ),
+        )    
+
+    openai_client = project_client.get_openai_client()
+
+    conversation = openai_client.conversations.create()
+    print(f"Created conversation (id: {conversation.id})")
 
     while True:
         user_input = input("Enter a command for your api (or 'exit' to quit): ")
         if user_input.lower() == 'exit':
             break
 
-        message = agents_client.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=user_input
+        openai_client.conversations.items.create(
+            conversation_id=conversation.id,
+            items=[{"type": "message", "role": "user", "content": user_input}],
         )
-        print(f"Created message, ID: {message.id}")
 
-        # Create and automatically process the run, handling tool calls internally
-        run = project_client.agents.runs.create_and_process(thread_id=thread.id, agent_id=agent.id)
-        print(f"Run finished with status: {run.status}")
+        response = openai_client.responses.create(
+            conversation=conversation.id,
+            extra_body={"agent_reference": {"name": agent.name, "version": agent.version, "type": "agent_reference"}},
+        )
 
-        if run.status == "failed":
-            print(f"Run failed: {run.last_error}")
-            break
-
-        # Retrieve the steps taken during the run for analysis
-        run_steps = project_client.agents.run_steps.list(thread_id=thread.id, run_id=run.id)
-
-        # Loop through each step to display information
-        for step in run_steps:
-            print(f"Step {step['id']} status: {step['status']}")
-
-            tool_calls = step.get("step_details", {}).get("tool_calls", [])
-            for call in tool_calls:
-                print(f"  Tool Call ID: {call.get('id')}")
-                print(f"  Type: {call.get('type')}")
-                function_details = call.get("function", {})
-                if function_details:
-                    print(f"  Function name: {function_details.get('name')}")
-                    print(f" function output: {function_details.get('output')}")
-
-            print()
-
-        # Fetch and log all messages
-        #messages = project_client.agents.messages.list(thread_id=thread.id)
-        #for message in messages:
-        #    print(f"Role: {message.role}, Content: {message.content}")
-        answer = project_client.agents.messages.get_last_message_by_role(thread_id=thread.id, role="assistant")
-        print(f"answer from assistant: {answer.content[0].text.value}")
+        print(f"output: {response.output_text}")
 
     # Delete the agent after use
-    project_client.agents.delete_agent(agent.id)
-    print("Deleted agent")
+    #project_client.agents.delete_agent(agent.id)
+    #print("Deleted agent")
