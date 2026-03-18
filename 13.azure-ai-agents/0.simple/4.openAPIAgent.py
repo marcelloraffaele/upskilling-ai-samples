@@ -42,14 +42,14 @@ with project_client:
     )
 
     agent = None
-    try:
-        # Check if the agent already exists
-        agentDetails = project_client.agents.get(agentName)
-        if agentDetails is not None and agentDetails.versions is not None:
-            version = agentDetails.versions.latest.version
-            agent = project_client.agents.get_version(agentName, version)
-    except Exception as e:
-        agent = None
+#    try:
+#        # Check if the agent already exists
+#        agentDetails = project_client.agents.get(agentName)
+#        if agentDetails is not None and agentDetails.versions is not None:
+#            version = agentDetails.versions.latest.version
+#            agent = project_client.agents.get_version(agentName, version)
+#    except Exception as e:
+#        agent = None
 
     if agent is None:
         agent = project_client.agents.create_version(
@@ -83,6 +83,9 @@ with project_client:
 
         print(f"output: {response.output_text}")
 
+    openai_client.conversations.delete(conversation.id)
+    print("Deleted conversation")
+    
     # Delete the agent after use
-    #project_client.agents.delete_agent(agent.id)
-    #print("Deleted agent")
+    project_client.agents.delete_agent(agent.id)
+    print("Deleted agent")
