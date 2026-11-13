@@ -21,6 +21,7 @@ jsonref
 #pip install agent-framework --pre
 # pip install agent-framework-devui --pre
 # pip install agent-framework-ag-ui --pre
+#pip install agent-framework-ollama --pre
 
 #mistral
 mistralai
